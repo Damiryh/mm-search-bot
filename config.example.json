@@ -1,0 +1,8 @@
+{
+    "mattermost_host": "<Mattermost domain>",
+    "mattermost_port": <Mattermost port>,
+    "mattermost_token": "<Mattermost API Token>",
+    "team_name": "mm-search-bot",
+    "debug": false,
+    "readthedocs_token": "<Readthedocs API Token>"
+}
