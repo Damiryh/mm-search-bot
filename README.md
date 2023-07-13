@@ -16,3 +16,10 @@ pip install -r requirements.txt
 source .venv/bin/activate
 python main.py
 ```
+
+## Примеры поисковых запросов
+```
+rtd smarty EXPR
+micro EXPR
+gitdev EXPR
+```
