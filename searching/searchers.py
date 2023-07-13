@@ -100,6 +100,6 @@ class GithubPagesSearcher(Searcher):
                     m = markdownify(table)
                     table_of_params.append(m)
 
-                result.append((name, self.path, ''.join(table_of_params)))
+                result.append((name, self.path,  '\n' + url + '\n' + ''.join(table_of_params)))
         print(*result, sep='\n')
         return SearchResult(result)

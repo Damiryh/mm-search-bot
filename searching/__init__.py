@@ -10,10 +10,7 @@ class SearchResult:
             yield f"- [{title}]({link}) {description}"
 
     def __repr__(self):
-        return "\n".join([
-            f"- [{title}]({link}) {description}"
-            for title, link, description in self.results
-        ])
+        return "\n".join([ row for row in self.rows() ])
 
 class Searcher:
     def search(self, query):
