@@ -16,6 +16,18 @@ class GreetPlugin(Plugin):
         self.driver.reply_to(message, "# Hello, World!")
 
 class SearchPlugin(Plugin):
+    def __init__(self):
+        super().__init__()
+        self.searchers = [
+            RTDSearcher(RTD_TOKEN, 'mi-smarty-docs'),
+            MicroimpulsSearcher(),
+            GithubPagesSearcher("https://microimpuls.github.io/smarty-tvmw-api-docs/"),
+            GithubPagesSearcher("https://microimpuls.github.io/smarty-billing-api-docs/"),
+            GithubPagesSearcher("https://microimpuls.github.io/smarty-viewstats-api-docs/"),
+            GithubPagesSearcher("https://microimpuls.github.io/smarty-device-monitoring-api-docs/"),
+            GithubPagesSearcher("https://microimpuls.github.io/smarty-content-api-docs/")
+        ]
+
     @listen_to("^(wiki|mi) (.*)$")
     async def search(self, message: Message, source: str, expr: str):
         # TODO Перенести всю логику по отдельным обработчикам
@@ -37,17 +49,11 @@ class SearchPlugin(Plugin):
 
     @listen_to("^gitdev (.*)$")
     async def search_in_github_pages(self, message: Message, expr: str):
-        searchers = [
-            GithubPagesSearcher("https://microimpuls.github.io/smarty-tvmw-api-docs/"),
-            GithubPagesSearcher("https://microimpuls.github.io/smarty-billing-api-docs/"),
-            GithubPagesSearcher("https://microimpuls.github.io/smarty-viewstats-api-docs/"),
-            GithubPagesSearcher("https://microimpuls.github.io/smarty-device-monitoring-api-docs/"),
-            GithubPagesSearcher("https://microimpuls.github.io/smarty-content-api-docs/")
-        ]
-
-        for searcher in searchers:
+        for searcher in self.searchers[2:]:
             # result = searcher.search(expr)
             pass
 
-        result = searchers[0].search(expr)
-        self.driver.reply_to(message, f"#### Results:\n { result }")
+        result = self.searchers[2].search(expr)
+        self.driver.reply_to(message, "#### Results:")
+        for row in result.rows():
+            self.driver.reply_to(message, f"{row}")

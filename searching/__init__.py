@@ -5,6 +5,10 @@ class SearchResult:
     def append(self, title, link, description):
 	    self.results.append((title, link, description))
 
+    def rows(self):
+        for title, link, description in self.results:
+            yield f"- [{title}]({link}) {description}"
+
     def __repr__(self):
         return "\n".join([
             f"- [{title}]({link}) {description}"
