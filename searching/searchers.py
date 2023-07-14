@@ -66,7 +66,7 @@ class GithubPagesSearcher(Searcher):
     def cache(self):
         options = webdriver.FirefoxOptions(); options.add_argument('-headless')
         driver = webdriver.Firefox(options=options)
-        driver.get('https://microimpuls.github.io/smarty-billing-api-docs/')
+        driver.get(self.path)
         self.page = bs4.BeautifulSoup(driver.page_source, features="lxml")
         driver.close()
 
@@ -83,13 +83,16 @@ class GithubPagesSearcher(Searcher):
 
             for article in articles:
                 name = article.find("h1").text
-                if not re.search(query, name):
+                if not re.search(query, name, flags=re.IGNORECASE):
                     continue
+
+                anchor = article.parent['id']
+                # print(self.path, anchor)
 
                 method = article.select_one(".method").text
                 url = article.select_one(".language-http").text
-                print("  ", name)
-                print("    ", method, url)
+                # print("  ", name)
+                # print("    ", method, url)
 
                 table_of_params = []
 
@@ -100,6 +103,6 @@ class GithubPagesSearcher(Searcher):
                     m = markdownify(table)
                     table_of_params.append(m)
 
-                result.append((name, self.path,  '\n' + url + '\n' + ''.join(table_of_params)))
-        print(*result, sep='\n')
+                result.append((name, self.path+f"#{anchor}",  '\n' + url + '\n' + ''.join(table_of_params)))
+        # print(*result, sep='\n')
         return SearchResult(result)

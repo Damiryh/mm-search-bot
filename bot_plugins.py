@@ -28,32 +28,24 @@ class SearchPlugin(Plugin):
             GithubPagesSearcher("https://microimpuls.github.io/smarty-content-api-docs/")
         ]
 
-    @listen_to("^(wiki|mi) (.*)$")
-    async def search(self, message: Message, source: str, expr: str):
-        # TODO Перенести всю логику по отдельным обработчикам
-        result = "Empty"
-        if source == 'rtd':
-            searcher = RTDSearcher(RTD_TOKEN, 'mi-smarty-docs')
-        result = searcher.search(expr)
-        self.driver.reply_to(message, f"#### Results:\n{ result }")
+    @listen_to("^wiki (.*)$")
+    async def search(self, message: Message, expr: str):
+        pass
 
     @listen_to("^rtd smarty (.*)$")
     async def search_in_smarty(self, message: Message, expr: str):
-        result = RTDSearcher(RTD_TOKEN, 'mi-smarty-docs').search(expr)
+        result = self.searchers[0].search(expr)
         self.driver.reply_to(message, f"#### Results:\n{ result }")
 
     @listen_to("^micro (.*)$")
     async def search_in_microimpuls(self, message: Message, expr: str):
-        result = MicroimpulsSearcher().search(expr)
+        result = searchers[1].search(expr)
         self.driver.reply_to(message, f"#### Results:\n{ result }")
 
     @listen_to("^gitdev (.*)$")
     async def search_in_github_pages(self, message: Message, expr: str):
-        for searcher in self.searchers[2:]:
-            # result = searcher.search(expr)
-            pass
-
-        result = self.searchers[2].search(expr)
         self.driver.reply_to(message, "#### Results:")
-        for row in result.rows():
-            self.driver.reply_to(message, f"{row}")
+        for searcher in self.searchers[2:]:
+            result = searcher.search(expr)
+            for row in result.rows():
+                self.driver.reply_to(message, f"{row}")
