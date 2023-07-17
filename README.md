@@ -27,3 +27,10 @@ history EXPR
 ```
 
 EXPR - регулярное выражение
+
+
+## Сборка и запуск Docker образа:
+```bash
+docker image build --tag mm-search-bot .
+docker run -p 80:80 -p 8080:8080 -p 443:443 mm-search-bot
+```
