@@ -1,6 +1,6 @@
 # MatterMost Search Bot
 Бот для чата с открытым исходным кодом [MatterMost](https://docs.mattermost.com), предназначеный
-для поиска информации в онлайн документации (wiki/readthedocs).
+для поиска информации в онлайн документации (wiki/readthedocs/microimpuls/apidoc/jsdoc).
 Бот написан на Python c использованием библиотеки [mmpy_bot](https://mmpy-bot.readthedocs.io/en/latest/).
 Настройки бота хранятся в файле config.json.
 
@@ -19,7 +19,11 @@ python main.py
 
 ## Примеры поисковых запросов
 ```
-rtd smarty EXPR
+rtd EXPR
+wiki EXPR
 micro EXPR
 gitdev EXPR
+history EXPR
 ```
+
+EXPR - регулярное выражение

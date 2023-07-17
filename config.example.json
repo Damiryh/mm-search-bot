@@ -5,4 +5,6 @@
     "team_name": "mm-search-bot",
     "debug": false,
     "readthedocs_token": "<Readthedocs API Token>"
+    "yandex_login": "<Login of Yandex account>"
+    "yandex_password": "<Password of Yandex account>"
 }
