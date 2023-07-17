@@ -67,8 +67,11 @@ class GithubPagesSearcher(Searcher):
         self.page = None
 
     def cache(self):
-        options = webdriver.FirefoxOptions(); options.add_argument('-headless')
-        driver = webdriver.Firefox(options=options)
+        options = webdriver.chrome.options.Options();
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+
+        driver = webdriver.Chrome(options=options)
         driver.get(self.path)
         self.page = bs4.BeautifulSoup(driver.page_source, features="lxml")
         driver.close()
@@ -117,8 +120,10 @@ class JsDocSearcher(Searcher):
 
     def search(self, query):
         search_result = []
-        options = webdriver.FirefoxOptions(); options.add_argument('-headless')
-        driver = webdriver.Firefox(options=options)
+        options = webdriver.chrome.options.Options();
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        driver = webdriver.Chrome(options=options)
         driver.get(self.path)
 
         input_elem = driver.find_element(By.ID, "search-input")
