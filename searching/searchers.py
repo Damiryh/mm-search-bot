@@ -5,12 +5,14 @@ import requests, re, bs4
 from operator import itemgetter
 from datetime import datetime
 from selenium.webdriver.common.by import By
+import json as js
 
 class RTDSearcher(Searcher):
     '''Поиск по документации на портале Read The Docs'''
     def __init__(self, token, project):
         self.token = token
         self.project = project
+
     def search(self, query):
         response = requests.get(
             "https://readthedocs.org/api/v3/search/",
@@ -138,7 +140,7 @@ class JsDocSearcher(Searcher):
             search_result.append((elem.text, elem.get_attribute('href'), ""))
 
         return SearchResult(search_result)
-                
+
 
 class MattermostHistorySearcher(Searcher):
     def __init__(self, token, url, team_id):
@@ -159,7 +161,7 @@ class MattermostHistorySearcher(Searcher):
 
     def search(self, query):
         json_params = { 'terms': query, 'is_or_search': True }
-        
+
         response = requests.post(
             self.url + f'/api/v4/teams/{self.team_id}/posts/search',
             headers=self.headers, json=json_params)
@@ -172,7 +174,7 @@ class MattermostHistorySearcher(Searcher):
             unix_timestamp = int(item['create_at'])//1000
             date_string = datetime.fromtimestamp(unix_timestamp).strftime('%d-%m-%Y')
             channel_name = list_channels.get(item['channel_id'], ('', 'Неизвестно'))
-            
+
             search_result.append((
                 item['message'],
                 self.url + f'/main/channels/{channel_name[0]}#post_{item["id"]}',
@@ -182,3 +184,102 @@ class MattermostHistorySearcher(Searcher):
 
         return SearchResult(search_result)
 
+
+
+class YandexWikiSearcher(Searcher):
+    def __init__(self, login, password):
+        self.login = login
+        self.password = password
+        self.auth()
+        self.cache()
+
+    def auth(self):
+        res = requests.get('https://passport.yandex.ru/auth')
+        cookies = res.cookies
+        action = re.search('https://passport.yandex.ru/auth.*?\"', res.text).group()[:-1]
+        csrf_token = re.search('csrf_token".*?".*?"', res.text).group().split('"')[-2]
+        retpath = re.search('retpath".*?".*?"', res.text).group().split('"')[-2]
+        process_uuid = re.search('process_uuid=.*?"', res.text).group()[:-1].split('=')[1]
+
+        print("Авторизация...")
+        res = requests.post('https://passport.yandex.ru/registration-validations/auth/multi_step/start',
+            cookies=cookies,
+            data={
+                'csrf_token': csrf_token,
+                'process_uuid': process_uuid,
+                'login': self.login,
+                'retpath': retpath
+            },
+            headers={
+                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+        )
+
+        json = res.json()
+        # csrf_token = json['csrf_token']
+        track_id = json['track_id']
+
+        print("Аутентификация...")
+        res = requests.post('https://passport.yandex.ru/registration-validations/auth/multi_step/commit_password',
+            cookies=cookies,
+            data={
+                'csrf_token': csrf_token,
+                'track_id': track_id,
+                'password': self.password,
+                'retpath': retpath,
+                'lang': 'ru'
+            },
+            headers={
+                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            },
+            allow_redirects=False
+        )
+
+        self.cookies = res.cookies
+
+        json = res.json()
+        if json['status'] == 'ok':
+            print('Аутентификация пройдена успешно')
+
+    def get_menu_items(self, slug):
+        session = requests.Session()
+        session.cookies = self.cookies
+        res = session.get('https://wiki.yandex.ru/?skipPromo=1')
+
+        text = res.text
+        csrf_token = re.search('secretkey":".*?"', text).group().split('"')[-2]
+        org_id = re.search('orgId":".*?"', text).group().split('"')[-2]
+
+        res = session.post('https://wiki.yandex.ru/.gateway/root/wiki/openNavigationTreeNode', headers={
+            'content-type': 'application/json',
+            'x-csrf-token': csrf_token,
+            'x-org-id': str(org_id)
+        }, data=js.dumps({"parentSlug": slug}))
+
+        return res.json()
+
+    def cache(self):
+        print('Caching yandex wiki menu tree...')
+        self.menu_tree = []
+
+        def visit_node(slug):
+            items = [
+                (item['slug'], item['title'])
+                for item in self.get_menu_items(slug)['children']['results']
+            ]
+
+            for slug, title in items:
+                visit_node(slug)
+                self.menu_tree.append((title, 'https://wiki.yandex.ru/' + slug, ""))
+
+        visit_node("")
+        print('Done!')
+
+    def search(self, query):
+        result = []
+
+        for item in self.menu_tree:
+            if re.search(query, item[0]):
+                result.append(item)
+
+        return SearchResult(result)
