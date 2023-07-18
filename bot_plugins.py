@@ -40,7 +40,7 @@ class SearchPlugin(Plugin):
             def run(cls):
                 while not self.stopped.is_set():
                     schedule.run_pending()
-                    time.sleep(1)
+                    time.sleep(100)
 
         schedule_thread = ScheduleThread()
         schedule_thread.start()

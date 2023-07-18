@@ -300,7 +300,7 @@ class YandexWikiSearcher(Searcher):
                 self.menu_tree.append((title, 'https://wiki.yandex.ru/' + slug, ""))
 
         visit_node("")
-        print('Done!')
+        print(f'Done! Menu nodes count: {len(self.menu_tree)}')
 
     def search(self, message, query):
         result = []
@@ -308,5 +308,6 @@ class YandexWikiSearcher(Searcher):
         for item in self.menu_tree:
             if re.search(query, item[0]):
                 result.append(item)
+                print(">>>> ", item)
 
         return SearchResult(result)
