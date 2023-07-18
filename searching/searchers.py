@@ -5,6 +5,7 @@ import requests, re, bs4
 from operator import itemgetter
 from datetime import datetime
 from selenium.webdriver.common.by import By
+import schedule, threading
 import json as js
 
 class RTDSearcher(Searcher):
@@ -13,7 +14,7 @@ class RTDSearcher(Searcher):
         self.token = token
         self.project = project
 
-    def search(self, query):
+    def search(self, message, query):
         response = requests.get(
             "https://readthedocs.org/api/v3/search/",
             headers = { "Authorization": f"Token {self.token}" },
@@ -42,7 +43,7 @@ class RTDSearcher(Searcher):
 class MicroimpulsSearcher(Searcher):
     '''Поиск по документации на сайте Microimpuls'''
 
-    def search(self, query):
+    def search(self, message, query):
         page = requests.get(
             "https://microimpuls.com",
             params={
@@ -64,7 +65,9 @@ class MicroimpulsSearcher(Searcher):
 class GithubPagesSearcher(Searcher):
     def __init__(self, path):
         self.path = path
-        self.page = None
+        self.cache()
+        
+        schedule.every(2).weeks.do(self.cache)
 
     def cache(self):
         options = webdriver.chrome.options.Options();
@@ -76,10 +79,7 @@ class GithubPagesSearcher(Searcher):
         self.page = bs4.BeautifulSoup(driver.page_source, features="lxml")
         driver.close()
 
-    def search(self, query):
-        if self.page == None:
-            self.cache()
-
+    def search(self, message, query):
         result = []
 
         sections = self.page.select("div#sections section")
@@ -118,7 +118,7 @@ class JsDocSearcher(Searcher):
     def __init__(self, path):
         self.path = path
 
-    def search(self, query):
+    def search(self, message, query):
         search_result = []
         options = webdriver.chrome.options.Options();
         options.add_argument('--headless')
@@ -129,7 +129,7 @@ class JsDocSearcher(Searcher):
         input_elem = driver.find_element(By.ID, "search-input")
         button_elem = driver.find_element(By.ID, "search-submit")
 
-        print(input_elem)
+        # print(input_elem)
 
         input_elem.send_keys(query)
         button_elem.click()
@@ -161,10 +161,18 @@ class MattermostHistorySearcher(Searcher):
         request_channels = requests.get(self.url + '/api/v4/channels', headers=self.headers).json()
         list_of_channels = {}
         for elem in request_channels:
-            list_of_channels[elem["id"]] = (elem["name"], elem["display_name"])
+            if elem['type'] != 'P':
+                list_of_channels[elem["id"]] = (elem["name"], elem["display_name"])
         return list_of_channels
 
-    def search(self, query):
+    def get_channels_for_user(self, user_id):
+        res = requests.get(
+            self.url + f'/api/v4/users/{user_id}/teams/{self.team_id}/channels',
+            headers=self.headers
+        ).json()
+        return [ channel['id'] for channel in res ]    
+
+    def search(self, message, query):
         json_params = { 'terms': query, 'is_or_search': True }
 
         response = requests.post(
@@ -178,7 +186,19 @@ class MattermostHistorySearcher(Searcher):
         for item in posts:
             unix_timestamp = int(item['create_at'])//1000
             date_string = datetime.fromtimestamp(unix_timestamp).strftime('%d-%m-%Y')
-            channel_name = list_channels.get(item['channel_id'], ('', 'Неизвестно'))
+
+            # print(dir(message))
+            if (item['channel_id'] not in list_channels.keys()) and (message.channel_id != item['channel_id']):
+                continue
+
+            sender = message.user_id
+            accepted_channels = self.get_channels_for_user(sender)
+
+            if (item['channel_id'] not in accepted_channels):
+                continue
+
+            print(item.get('channel_id'))
+            channel_name = list_channels.get(item['channel_id'], ("#", "личное"))
 
             search_result.append((
                 item['message'],
@@ -190,13 +210,15 @@ class MattermostHistorySearcher(Searcher):
         return SearchResult(search_result)
 
 
-
 class YandexWikiSearcher(Searcher):
     def __init__(self, login, password):
         self.login = login
         self.password = password
         self.auth()
         self.cache()
+
+        schedule.every(2).hours.do(self.auth)
+        schedule.every().week.do(self.cache)
 
     def auth(self):
         res = requests.get('https://passport.yandex.ru/auth')
@@ -206,7 +228,7 @@ class YandexWikiSearcher(Searcher):
         retpath = re.search('retpath".*?".*?"', res.text).group().split('"')[-2]
         process_uuid = re.search('process_uuid=.*?"', res.text).group()[:-1].split('=')[1]
 
-        print("Авторизация...")
+        #print("Авторизация...")
         res = requests.post('https://passport.yandex.ru/registration-validations/auth/multi_step/start',
             cookies=cookies,
             data={
@@ -224,7 +246,7 @@ class YandexWikiSearcher(Searcher):
         # csrf_token = json['csrf_token']
         track_id = json['track_id']
 
-        print("Аутентификация...")
+        #print("Аутентификация...")
         res = requests.post('https://passport.yandex.ru/registration-validations/auth/multi_step/commit_password',
             cookies=cookies,
             data={
@@ -280,7 +302,7 @@ class YandexWikiSearcher(Searcher):
         visit_node("")
         print('Done!')
 
-    def search(self, query):
+    def search(self, message, query):
         result = []
 
         for item in self.menu_tree:

@@ -13,5 +13,5 @@ class SearchResult:
         return "\n".join([ row for row in self.rows() ])
 
 class Searcher:
-    def search(self, query):
+    def search(self, message, query):
         return SearchResult()
