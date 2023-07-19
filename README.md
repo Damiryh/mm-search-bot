@@ -3,7 +3,7 @@
 для поиска информации в онлайн документации (wiki/readthedocs/microimpuls/apidoc/jsdoc).
 Бот написан на Python c использованием библиотеки [mmpy_bot](https://mmpy-bot.readthedocs.io/en/latest/).
 Настройки бота хранятся в файле config.json.
-Пример конфигурации находится в файле [config.example.json](https://github.com/Damiryh/mm-search-bot/blob/master/requirements.txt)
+Пример конфигурации находится в файле [config.example.json](https://github.com/Damiryh/mm-search-bot/blob/master/config.example.json)
 
 Подготовка:
 ```bash
