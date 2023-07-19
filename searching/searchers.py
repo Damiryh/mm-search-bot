@@ -8,6 +8,16 @@ from selenium.webdriver.common.by import By
 import schedule, threading
 import json as js
 
+try:
+    with open('config.json', 'r', encoding='utf-8') as config_file:
+        config = js.loads(config_file.read())
+        CACHING_INTERVAL = config['caching_interval']
+except IOError as e:
+    print(f'Unable to read config: {e}')
+    exit(1)
+except KeyError as e:
+    print(f'Cannot find variable: {e}')
+
 class RTDSearcher(Searcher):
     '''Поиск по документации на портале Read The Docs'''
     def __init__(self, token, project):
@@ -218,7 +228,7 @@ class YandexWikiSearcher(Searcher):
         self.cache()
 
         schedule.every(2).hours.do(self.auth)
-        schedule.every().week.do(self.cache)
+        schedule.every(CACHING_INTERVAL).days.do(self.cache)
 
     def auth(self):
         res = requests.get('https://passport.yandex.ru/auth')
