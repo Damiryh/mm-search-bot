@@ -3,6 +3,7 @@
 для поиска информации в онлайн документации (wiki/readthedocs/microimpuls/apidoc/jsdoc).
 Бот написан на Python c использованием библиотеки [mmpy_bot](https://mmpy-bot.readthedocs.io/en/latest/).
 Настройки бота хранятся в файле config.json.
+Пример конфигурации находится в файле [config.example.json](https://github.com/Damiryh/mm-search-bot/blob/master/requirements.txt)
 
 Подготовка:
 ```bash
@@ -19,7 +20,9 @@ python main.py
 
 ## Примеры поисковых запросов
 ```
-rtd EXPR
+global EXPR     # Сквозной поиск
+history         # Поиск по истории сообщений
+
 wiki EXPR
 micro EXPR
 gitdev EXPR
@@ -27,7 +30,6 @@ history EXPR
 ```
 
 EXPR - регулярное выражение
-
 
 ## Сборка и запуск Docker образа:
 ```bash
